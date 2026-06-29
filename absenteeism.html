@@ -1,0 +1,471 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absenteeism - SmartAtten</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <script>!function(){var t=localStorage.getItem("institrack_theme")||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");document.documentElement.setAttribute("data-theme",t)}();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .absentee-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+    .absentee-summary{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+    .absentee-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 20px;text-align:center;min-width:80px;flex:1}
+    .absentee-stat .num{font-size:22px;font-weight:700;display:block;color:var(--text)}
+    .absentee-stat .label{font-size:11px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px}
+    .absentee-student-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+    .absentee-student-row .info{flex:1}
+    .absentee-student-row .name{font-weight:500;font-size:13px}
+    .absentee-student-row .meta{color:var(--text-light);font-size:11px}
+    .absentee-student-row .att-bar{display:flex;align-items:center;gap:8px;width:140px}
+    .absentee-student-row .att-bar .bar{width:60px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;flex-shrink:0}
+    .absentee-student-row .att-bar .bar-fill{height:100%;border-radius:3px}
+    .absentee-student-row .att-bar .pct{font-size:11px;color:var(--text-light)}
+    .mark-btns{display:flex;gap:3px}
+    .mark-btn{width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;font-size:11px;transition:var(--transition);background:var(--bg-surface);color:var(--text-muted)}
+    .mark-btn:hover{transform:scale(1.1)}
+    .mark-btn.mark-present.active,.mark-btn.mark-present:hover{background:rgba(0,230,118,0.15);color:var(--success)}
+    .mark-btn.mark-absent.active,.mark-btn.mark-absent:hover{background:rgba(255,64,96,0.15);color:var(--danger)}
+    .mark-btn.mark-leave.active,.mark-btn.mark-leave:hover{background:rgba(255,171,0,0.15);color:var(--warning)}
+    .absentee-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    .top-absentee-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+    .top-absentee-item .rank{width:24px;height:24px;border-radius:50%;background:rgba(255,64,96,0.12);color:var(--danger);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
+    .top-absentee-item .rank.top2{background:rgba(255,171,0,0.12);color:var(--warning)}
+    .top-absentee-item .rank.top3{background:rgba(255,171,0,0.08);color:var(--warning)}
+    .top-absentee-item .info{flex:1}
+    .top-absentee-item .name{font-weight:500;font-size:13px}
+    .top-absentee-item .meta{color:var(--text-light);font-size:11px}
+    .top-absentee-item .count{font-weight:700;font-size:16px;color:var(--danger)}
+    .absence-streak{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+    .absence-streak.danger{background:rgba(255,64,96,0.12);color:var(--danger)}
+    .absence-streak.warning{background:rgba(255,171,0,0.12);color:var(--warning)}
+    @media(max-width:768px){.absentee-charts{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="toast-container"></div>
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-logo"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:52px;height:52px;display:block"></div>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    <div class="loading-text">Loading Absenteeism</div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:24px;height:24px;display:block"></div>
+      <div class="logo-text">SmartAtten</div>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Main</div>
+      <a href="dashboard.html" class="nav-link"><i class="fas fa-th-large"></i> <span>Dashboard</span></a>
+      <a href="attendance.html" class="nav-link"><i class="fas fa-clipboard-check"></i> <span>Attendance</span></a>
+      <a href="reports.html" class="nav-link"><i class="fas fa-chart-bar"></i> <span>Reports</span></a>
+      <a href="students.html" class="nav-link"><i class="fas fa-users"></i> <span>Students</span></a>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Management</div>
+      <a href="absenteeism.html" class="nav-link active"><i class="fas fa-user-graduate"></i> <span>Absenteeism</span></a>
+      <a href="timetable.html" class="nav-link"><i class="fas fa-calendar-alt"></i> <span>Timetable</span></a>
+      <a href="leaves.html" class="nav-link"><i class="fas fa-door-open"></i> <span>Leaves</span></a>
+      <a href="fees.html" class="nav-link"><i class="fas fa-wallet"></i> <span>Fees</span></a>
+    </div>
+    <div class="nav-section" style="margin-top:auto;border-top:1px solid var(--border);padding-top:16px">
+      <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> <span>Settings</span></a>
+      <a href="#" onclick="App.logout()" class="nav-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+        <h3 style="font-size:16px;font-weight:700;letter-spacing:-0.3px">Absenteeism</h3>
+        <span class="live-clock"></span>
+      </div>
+      <div class="topbar-right">
+        <span class="badge badge-info" id="roleBadge" style="font-size:9px">Teacher</span>
+
+        <button class="theme-toggle"><i class="fas fa-moon"></i></button>
+        <button class="notif-btn"><i class="fas fa-bell"></i><span class="notif-badge" id="notifCount">0</span></button>
+        <div class="user-avatar" id="avatarEl"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="tabs">
+        <button class="tab active" data-tab="mark"><i class="fas fa-hand"></i> Mark Attendance</button>
+        <button class="tab" data-tab="analytics"><i class="fas fa-chart-line"></i> Absenteeism Analytics</button>
+      </div>
+
+      <div id="markTab" class="tab-content">
+        <div class="absentee-controls">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Department</label>
+            <select id="absDept"><option value="">All Departments</option></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Class</label>
+            <select id="absClass"><option value="">All Classes</option></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Subject</label>
+            <select id="absSubject"><option value="">Select Subject</option></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Date</label>
+            <input type="date" id="absDate">
+          </div>
+          <div style="display:flex;gap:6px;align-items:end;padding-bottom:2px">
+            <button class="btn btn-sm btn-primary" id="bulkPresent"><i class="fas fa-check"></i> All Present</button>
+            <button class="btn btn-sm btn-danger" id="bulkAbsent"><i class="fas fa-times"></i> All Absent</button>
+          </div>
+        </div>
+
+        <div class="absentee-summary" id="absSummary">
+          <div class="absentee-stat"><span class="num" id="statTotal">0</span><span class="label">Total</span></div>
+          <div class="absentee-stat" style="border-color:var(--success)"><span class="num" id="statPresent" style="color:var(--success)">0</span><span class="label">Present</span></div>
+          <div class="absentee-stat" style="border-color:var(--danger)"><span class="num" id="statAbsent" style="color:var(--danger)">0</span><span class="label">Absent</span></div>
+          <div class="absentee-stat" style="border-color:var(--warning)"><span class="num" id="statLeave" style="color:var(--warning)">0</span><span class="label">On Leave</span></div>
+          <div class="absentee-stat" style="border-color:var(--text-muted)"><span class="num" id="statUnmarked" style="color:var(--text-muted)">0</span><span class="label">Unmarked</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h4>Students</h4>
+            <small id="absStudentCount" style="color:var(--text-light)"></small>
+          </div>
+          <div class="card-body" id="absStudentList" style="padding:12px"></div>
+        </div>
+      </div>
+
+      <div id="analyticsTab" class="tab-content" style="display:none">
+        <div class="absentee-controls">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Department</label>
+            <select id="analyticsDept"><option value="">All Departments</option></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Class</label>
+            <select id="analyticsClass"><option value="">All Classes</option></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">From</label>
+            <input type="date" id="analyticsFrom">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">To</label>
+            <input type="date" id="analyticsTo">
+          </div>
+          <button class="btn btn-primary" id="analyticsRefresh"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+
+        <div class="absentee-charts">
+          <div class="card"><div class="card-header"><h4>Daily Absenteeism Rate</h4></div><div class="card-body"><canvas id="dailyChart" height="200"></canvas></div></div>
+          <div class="card"><div class="card-header"><h4>Absenteeism by Subject</h4></div><div class="card-body"><canvas id="subjectChart" height="200"></canvas></div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><h4>Top 10 Most Absent Students</h4></div>
+          <div class="card-body" id="topAbsenteesList" style="padding:12px"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h4>All Students - Absence Report</h4></div>
+          <div class="card-body" style="padding:0">
+            <div class="table-container" style="border:none;border-radius:0">
+              <table>
+                <thead><tr><th>Rank</th><th>Student</th><th>Class</th><th>Total Days</th><th>Absent</th><th>Present</th><th>Absence %</th><th>Streak</th></tr></thead>
+                <tbody id="absenceTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/ai-recommend.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const Absenteeism = {
+      dailyChart: null, subjectChart: null,
+
+      init() {
+        const today = new Date().toISOString().split("T")[0];
+        const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString().split("T")[0];
+        document.getElementById("absDate").value = today;
+        document.getElementById("analyticsFrom").value = thirtyDaysAgo;
+        document.getElementById("analyticsTo").value = today;
+        this.loadDropdowns(); this.renderMarkTab(); this.renderAnalytics();
+        document.querySelectorAll(".tab").forEach(tab => {
+          tab.addEventListener("click", () => {
+            document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(tc => tc.style.display = "none");
+            tab.classList.add("active");
+            document.getElementById(tab.dataset.tab + "Tab").style.display = "block";
+            if (tab.dataset.tab === "analytics") this.renderAnalytics();
+          });
+        });
+        document.getElementById("absDept").addEventListener("change", () => { this.filterClasses("absDept","absClass"); this.renderMarkTab(); });
+        document.getElementById("absClass").addEventListener("change", () => this.renderMarkTab());
+        document.getElementById("absSubject").addEventListener("change", () => this.renderMarkTab());
+        document.getElementById("absDate").addEventListener("change", () => this.renderMarkTab());
+        document.getElementById("analyticsDept").addEventListener("change", () => this.filterClasses("analyticsDept","analyticsClass"));
+        document.getElementById("analyticsRefresh").addEventListener("click", () => this.renderAnalytics());
+      },
+
+      loadDropdowns() {
+        ["absDept","analyticsDept"].forEach(id => {
+          document.getElementById(id).innerHTML = '<option value="">All Departments</option>' +
+            AppData.departments.map(d => `<option value="${d.code}">${d.name}</option>`).join("");
+        });
+        document.getElementById("absClass").innerHTML = '<option value="">All Classes</option>' + AppData.classes.map(c => `<option value="${c}">${c}</option>`).join("");
+        document.getElementById("absSubject").innerHTML = '<option value="">Select Subject</option>' + AppData.subjects.map(s => `<option value="${s}">${s}</option>`).join("");
+        document.getElementById("analyticsClass").innerHTML = '<option value="">All Classes</option>' + AppData.classes.map(c => `<option value="${c}">${c}</option>`).join("");
+      },
+
+      filterClasses(deptId, classId) {
+        const dept = document.getElementById(deptId).value;
+        const sel = document.getElementById(classId);
+        const classes = dept ? AppData.classes.filter(c => c.startsWith(dept)) : AppData.classes;
+        sel.innerHTML = '<option value="">All Classes</option>' + classes.map(c => `<option value="${c}">${c}</option>`).join("");
+        if (deptId === "absDept") this.renderMarkTab();
+        if (deptId === "analyticsDept") this.renderAnalytics();
+      },
+
+      getFilteredStudents(classFilter) {
+        let students = Store.getStudents();
+        if (classFilter) students = students.filter(s => s.class === classFilter);
+        else {
+          const dept = document.getElementById("absDept").value;
+          const cls = document.getElementById("absClass").value;
+          if (cls) students = students.filter(s => s.class === cls);
+          else if (dept) students = students.filter(s => s.class.startsWith(dept));
+        }
+        return students;
+      },
+
+      renderMarkTab() {
+        const students = this.getFilteredStudents();
+        const subject = document.getElementById("absSubject").value;
+        const date = document.getElementById("absDate").value;
+        const todayRecords = Store.getAttendance().filter(r => r.date === date);
+        document.getElementById("statTotal").textContent = students.length;
+
+        if (!subject) {
+          document.getElementById("absStudentList").innerHTML = '<div class="empty-state" style="padding:40px"><i class="fas fa-hand-pointer"></i><p>Select a subject to start marking attendance</p></div>';
+          document.getElementById("statPresent").textContent = "0";
+          document.getElementById("statAbsent").textContent = "0";
+          document.getElementById("statLeave").textContent = "0";
+          document.getElementById("statUnmarked").textContent = "0";
+          document.getElementById("absStudentCount").textContent = "";
+          return;
+        }
+
+        const present = [], absent = [], leave = [];
+        students.forEach(s => {
+          const rec = todayRecords.find(r => r.studentId === s.id && r.subject === subject);
+          if (!rec) return;
+          if (rec.status === "present") present.push(s);
+          else if (rec.status === "absent") absent.push(s);
+          else if (rec.status === "leave") leave.push(s);
+        });
+        const unmarked = students.length - present.length - absent.length - leave.length;
+
+        document.getElementById("statPresent").textContent = present.length;
+        document.getElementById("statAbsent").textContent = absent.length;
+        document.getElementById("statLeave").textContent = leave.length;
+        document.getElementById("statUnmarked").textContent = unmarked;
+        document.getElementById("absStudentCount").textContent = `${students.length} students`;
+
+        const list = document.getElementById("absStudentList");
+        list.innerHTML = students.map(s => {
+          const rec = todayRecords.find(r => r.studentId === s.id && r.subject === subject);
+          const status = rec ? rec.status : "";
+          const pct = Store.calcAttendancePercent(s.id, 30);
+          const barColor = pct >= 75 ? "#00e676" : pct >= 60 ? "#ffab00" : "#ff4060";
+          return `<div class="absentee-student-row">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(0,145,160,0.12);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--primary)">${s.name.charAt(0)}</div>
+            <div class="info"><div class="name">${s.name}</div><div class="meta">${s.roll} Â· ${s.class}</div></div>
+            <div class="att-bar"><div class="bar"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div><div class="pct">${pct}%</div></div>
+            <div class="mark-btns">
+              <button class="mark-btn mark-present ${status === 'present' ? 'active' : ''}" data-id="${s.id}" data-status="present"><i class="fas fa-check"></i></button>
+              <button class="mark-btn mark-absent ${status === 'absent' ? 'active' : ''}" data-id="${s.id}" data-status="absent"><i class="fas fa-times"></i></button>
+              <button class="mark-btn mark-leave ${status === 'leave' ? 'active' : ''}" data-id="${s.id}" data-status="leave"><i class="fas fa-clock"></i></button>
+            </div>
+          </div>`;
+        }).join("");
+
+        list.querySelectorAll(".mark-btn").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            this.markSingle(parseInt(btn.dataset.id), btn.dataset.status, subject, date);
+          });
+        });
+        document.getElementById("bulkPresent").onclick = () => this.bulkMark("present", subject, date);
+        document.getElementById("bulkAbsent").onclick = () => this.bulkMark("absent", subject, date);
+      },
+
+      markSingle(id, status, subject, date) {
+        if (!subject) { App.showToast("Select a subject first", "warning"); return; }
+        const records = Store.getAttendance();
+        const existing = records.findIndex(r => r.date === date && r.studentId === id && r.subject === subject);
+        const student = Store.getStudents().find(s => s.id === id);
+        if (!student) return;
+        const teacher = App.currentUser?.name || "manual";
+        const record = { id: `${date}-${id}-${Date.now()}`, date, studentId: id, name: student.name, roll: student.roll, class: student.class, subject, status, markedBy: teacher };
+        if (existing > -1) records[existing] = record;
+        else records.push(record);
+        Store.saveAttendance(records);
+        this.renderMarkTab();
+        const pct = Store.calcAttendancePercent(id);
+        const students = Store.getStudents();
+        const idx = students.findIndex(s => s.id === id);
+        if (idx > -1) { students[idx].attendance = pct; Store.saveStudents(students); }
+        Store.logActivity("attendance_marked", `${status} for ${student.name} (${student.roll}) — ${subject}`);
+        App.showToast(`${student.name} marked ${status}`, status === "present" ? "success" : "danger");
+      },
+
+      bulkMark(status, subject, date) {
+        if (!subject) { App.showToast("Select a subject first", "warning"); return; }
+        const students = this.getFilteredStudents();
+        const existing = Store.getAttendance().filter(r => r.date === date && r.subject === subject);
+        const existingIds = new Set(existing.map(r => r.studentId));
+        const records = Store.getAttendance();
+        students.forEach(s => {
+          if (!existingIds.has(s.id)) {
+            records.push({ id: `${date}-${s.id}-bulk-${Date.now()}`, date, studentId: s.id, name: s.name, roll: s.roll, class: s.class, subject, status, markedBy: App.currentUser?.name || "bulk" });
+          }
+        });
+        Store.saveAttendance(records);
+        this.renderMarkTab();
+        Store.logActivity("attendance_bulk", `All ${students.length} students marked ${status} — ${subject}`);
+        App.showToast(`All marked ${status}`, "success");
+      },
+
+      renderAnalytics() {
+        const dept = document.getElementById("analyticsDept").value;
+        const cls = document.getElementById("analyticsClass").value;
+        const from = document.getElementById("analyticsFrom").value;
+        const to = document.getElementById("analyticsTo").value;
+        let students = Store.getStudents();
+        if (cls) students = students.filter(s => s.class === cls);
+        else if (dept) students = students.filter(s => s.class.startsWith(dept));
+        let records = Store.getAttendance();
+        if (from) records = records.filter(r => r.date >= from);
+        if (to) records = records.filter(r => r.date <= to);
+        if (cls) records = records.filter(r => r.class === cls);
+        else if (dept) records = records.filter(r => r.class.startsWith(dept));
+        this.renderDailyChart(records, from, to);
+        this.renderSubjectChart(records);
+        this.renderTopAbsentees(students, records);
+        this.renderAbsenceTable(students, records);
+      },
+
+      renderDailyChart(records, from, to) {
+        const days = {};
+        records.forEach(r => {
+          if (!days[r.date]) days[r.date] = { total: 0, absent: 0 };
+          days[r.date].total++;
+          if (r.status === "absent") days[r.date].absent++;
+        });
+        const labels = Object.keys(days).sort();
+        const data = labels.map(d => days[d].total ? Math.round((days[d].absent / days[d].total) * 100) : 0);
+        if (this.dailyChart) this.dailyChart.destroy();
+        const ctx = document.getElementById("dailyChart").getContext("2d");
+        this.dailyChart = new Chart(ctx, {
+          type: "line",
+          data: { labels, datasets: [{ label: "Absenteeism Rate (%)", data, borderColor: "#ff4060", backgroundColor: "rgba(255,64,96,0.08)", fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: "#ff4060" }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 10, font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { font: { size: 10 }, callback: v => v + "%" }, grid: { color: "rgba(255,255,255,0.04)" } } } }
+        });
+      },
+
+      renderSubjectChart(records) {
+        const subjects = {};
+        records.forEach(r => {
+          if (!subjects[r.subject]) subjects[r.subject] = { total: 0, absent: 0 };
+          subjects[r.subject].total++;
+          if (r.status === "absent") subjects[r.subject].absent++;
+        });
+        const labels = Object.keys(subjects);
+        const data = labels.map(s => subjects[s].total ? Math.round((subjects[s].absent / subjects[s].total) * 100) : 0);
+        if (this.subjectChart) this.subjectChart.destroy();
+        const ctx = document.getElementById("subjectChart").getContext("2d");
+        this.subjectChart = new Chart(ctx, {
+          type: "bar",
+          data: { labels, datasets: [{ label: "Absenteeism %", data, backgroundColor: "rgba(0,145,160,0.6)", borderColor: "#0091A0", borderWidth: 1 }] },
+          options: { responsive: true, maintainAspectRatio: false, indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100, ticks: { font: { size: 9 }, callback: v => v + "%" }, grid: { color: "rgba(255,255,255,0.04)" } }, y: { ticks: { font: { size: 9 } }, grid: { display: false } } } }
+        });
+      },
+
+      renderTopAbsentees(students, records) {
+        const absMap = {};
+        records.forEach(r => { if (r.status === "absent") absMap[r.studentId] = (absMap[r.studentId] || 0) + 1; });
+        const sorted = students.map(s => ({ ...s, absences: absMap[s.id] || 0 })).filter(s => s.absences > 0).sort((a, b) => b.absences - a.absences).slice(0, 10);
+        const container = document.getElementById("topAbsenteesList");
+        if (!sorted.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:#00e676"></i><p>No absenteeism records found</p></div>'; return; }
+        const maxAbs = sorted[0].absences || 1;
+        container.innerHTML = sorted.map((s, i) => {
+          const rank = i + 1;
+          return `<div class="top-absentee-item">
+            <div class="rank ${rank === 2 ? 'top2' : rank === 3 ? 'top3' : ''}">${rank}</div>
+            <div class="info"><div class="name">${s.name}</div><div class="meta">${s.class} Â· ${s.roll}</div></div>
+            <div style="flex:1;max-width:140px"><div style="height:6px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${(s.absences/maxAbs)*100}%;background:${rank <= 3 ? '#ff4060' : '#ffab00'};border-radius:4px"></div></div></div>
+            <div class="count">${s.absences}</div>
+          </div>`;
+        }).join("");
+      },
+
+      renderAbsenceTable(students, records) {
+        const absMap = {}, totalMap = {};
+        records.forEach(r => {
+          totalMap[r.studentId] = (totalMap[r.studentId] || 0) + 1;
+          if (r.status === "absent") absMap[r.studentId] = (absMap[r.studentId] || 0) + 1;
+        });
+        const rows = students.map(s => ({ ...s, total: totalMap[s.id] || 0, absences: absMap[s.id] || 0 })).sort((a, b) => b.absences - a.absences);
+        let rank = 0, prevAbs = -1;
+        document.getElementById("absenceTableBody").innerHTML = rows.map(s => {
+          if (s.absences !== prevAbs) { rank++; prevAbs = s.absences; }
+          const pct = s.total ? Math.round((s.absences / s.total) * 100) : 0;
+          const barColor = pct >= 25 ? "#ff4060" : pct >= 15 ? "#ffab00" : "#00e676";
+          const streak = this.calcStreak(s.id, records);
+          return `<tr>
+            <td>${s.absences > 0 ? rank : '-'}</td>
+            <td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:rgba(0,145,160,0.12);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;color:var(--primary)">${s.name.charAt(0)}</div><div><div style="font-weight:500;font-size:13px">${s.name}</div><small style="color:var(--text-light)">${s.roll}</small></div></div></td>
+            <td style="font-size:13px">${s.class}</td><td style="font-size:13px">${s.total}</td>
+            <td style="font-size:13px;color:${s.absences > 0 ? 'var(--danger)' : 'var(--text-light)'}">${s.absences}</td>
+            <td style="font-size:13px">${s.total - s.absences}</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;max-width:60px;height:6px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px"></div></div><span style="font-size:12px;font-weight:600;color:${barColor}">${pct}%</span></div></td>
+            <td>${streak}</td>
+          </tr>`;
+        }).join("");
+      },
+
+      calcStreak(studentId, records) {
+        const studentRecs = records.filter(r => r.studentId === studentId && r.status === "absent").sort((a, b) => b.date.localeCompare(a.date));
+        if (!studentRecs.length) return '<span style="font-size:12px;color:var(--text-light)">None</span>';
+        let streak = 1;
+        for (let i = 0; i < studentRecs.length - 1; i++) {
+          const d1 = new Date(studentRecs[i].date), d2 = new Date(studentRecs[i + 1].date);
+          const diff = (d1 - d2) / 86400000;
+          if (diff <= 2) streak++; else break;
+        }
+        const cls = streak >= 5 ? "danger" : streak >= 3 ? "warning" : "";
+        const icon = streak >= 5 ? "fa-exclamation-triangle" : streak >= 3 ? "fa-exclamation-circle" : "fa-calendar";
+        return `<span class="absence-streak ${cls}"><i class="fas ${icon}" style="font-size:10px"></i> ${streak} day${streak > 1 ? 's' : ''}</span>`;
+      }
+    };
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const checkInit = setInterval(() => {
+        if (typeof App !== "undefined" && App.init) { Absenteeism.init(); clearInterval(checkInit); }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

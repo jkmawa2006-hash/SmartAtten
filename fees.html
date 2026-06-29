@@ -1,0 +1,496 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fee Management - SmartAtten</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <script>!function(){var t=localStorage.getItem("institrack_theme")||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");document.documentElement.setAttribute("data-theme",t)}();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div class="toast-container"></div>
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-logo"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:52px;height:52px;display:block"></div>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    <div class="loading-text">Loading Fees</div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:24px;height:24px;display:block"></div>
+      <div class="logo-text">SmartAtten</div>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Main</div>
+      <a href="dashboard.html" class="nav-link"><i class="fas fa-th-large"></i> <span>Dashboard</span></a>
+      <a href="attendance.html" class="nav-link"><i class="fas fa-clipboard-check"></i> <span>Attendance</span></a>
+      <a href="reports.html" class="nav-link"><i class="fas fa-chart-bar"></i> <span>Reports</span></a>
+      <a href="students.html" class="nav-link"><i class="fas fa-users"></i> <span>Students</span></a>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Management</div>
+      <a href="absenteeism.html" class="nav-link"><i class="fas fa-user-graduate"></i> <span>Absenteeism</span></a>
+      <a href="timetable.html" class="nav-link"><i class="fas fa-calendar-alt"></i> <span>Timetable</span></a>
+      <a href="leaves.html" class="nav-link"><i class="fas fa-door-open"></i> <span>Leaves</span></a>
+      <a href="fees.html" class="nav-link active"><i class="fas fa-wallet"></i> <span>Fees</span></a>
+    </div>
+    <div class="nav-section" style="margin-top:auto;border-top:1px solid var(--border);padding-top:16px">
+      <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> <span>Settings</span></a>
+      <a href="#" onclick="App.logout()" class="nav-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+        <h3 style="font-size:16px;font-weight:700;letter-spacing:-0.3px">Fee Management</h3>
+        <span class="live-clock"></span>
+      </div>
+      <div class="topbar-right">
+        <span class="badge badge-info" id="roleBadge" style="font-size:9px">Teacher</span>
+
+        <button class="theme-toggle"><i class="fas fa-moon"></i></button>
+        <button class="notif-btn"><i class="fas fa-bell"></i><span class="notif-badge" id="notifCount">0</span></button>
+        <div class="user-avatar" id="avatarEl"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="stat-cards" id="feeStats"></div>
+
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" onclick="showFeeStructure()"><i class="fas fa-book"></i> Fee Structure</button>
+        <div style="flex:1;min-width:120px"></div>
+        <div style="min-width:150px">
+          <select id="classFilter" onchange="renderFees()">
+            <option value="all">All Classes</option>
+          </select>
+        </div>
+        <div style="min-width:140px">
+          <select id="statusFilter" onchange="renderFees()">
+            <option value="all">All Status</option>
+            <option value="paid">Paid</option>
+            <option value="partial">Partial</option>
+            <option value="pending">Pending</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+        <div style="min-width:200px;position:relative">
+          <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i>
+          <input type="text" id="feeSearch" placeholder="Search student..." style="padding-left:34px" oninput="renderFees()">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h4>Fee Records</h4>
+          <div style="display:flex;align-items:center;gap:12px">
+            <small style="color:var(--text-light)" id="feeCount"></small>
+            <button class="btn btn-sm btn-secondary" onclick="exportFeesCSV()"><i class="fas fa-download"></i> Export</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-container" style="border:none;border-radius:0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Class</th>
+                  <th>Due Date</th>
+                  <th>Total</th>
+                  <th>Paid</th>
+                  <th>Balance</th>
+                  <th>Progress</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="feeTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal" style="max-width:460px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0">Record Payment</h3>
+        <button onclick="closeModal('paymentModal')" style="background:none;border:none;color:var(--text-light);font-size:24px;cursor:pointer">&times;</button>
+      </div>
+      <div id="paymentStudentInfo" style="padding:12px;background:var(--bg-card);border-radius:var(--radius-sm);margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-weight:600;font-size:14px" id="payStudentName"></div>
+        <div style="font-size:12px;color:var(--text-light)" id="payStudentMeta"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (৳)</label>
+          <input type="number" id="payAmount" placeholder="Enter amount" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Balance Remaining</label>
+          <div style="padding:10px 14px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px;font-weight:600" id="payBalanceDisplay">৳0</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Payment Mode</label>
+          <select id="payMode">
+            <option value="online">Online Transfer</option>
+            <option value="cash">Cash</option>
+            <option value="cheque">Cheque</option>
+            <option value="card">Card</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Date</label>
+          <input type="date" id="payDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <input type="text" id="payNotes" placeholder="e.g. Third installment">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-outline" onclick="closeModal('paymentModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitPayment()"><i class="fas fa-check"></i> Record Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment History Modal -->
+  <div class="modal-overlay" id="historyModal">
+    <div class="modal" style="max-width:520px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0">Payment History</h3>
+        <button onclick="closeModal('historyModal')" style="background:none;border:none;color:var(--text-light);font-size:24px;cursor:pointer">&times;</button>
+      </div>
+      <div id="historyStudentInfo" style="margin-bottom:16px">
+        <div style="font-weight:600;font-size:14px" id="histStudentName"></div>
+        <div style="font-size:12px;color:var(--text-light)" id="histStudentMeta"></div>
+      </div>
+      <div id="historyList"></div>
+      <div class="empty-state" id="historyEmpty" style="display:none">
+        <i class="fas fa-receipt"></i>
+        <p>No payment records found</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fee Structure Modal -->
+  <div class="modal-overlay" id="structureModal">
+    <div class="modal" style="max-width:600px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0">Fee Structure</h3>
+        <button onclick="closeModal('structureModal')" style="background:none;border:none;color:var(--text-light);font-size:24px;cursor:pointer">&times;</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <select id="structClassFilter" onchange="renderFeeStructure()" style="max-width:200px">
+        </select>
+      </div>
+      <div id="structureBody"></div>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div class="modal-overlay" id="receiptModal">
+    <div class="modal" style="max-width:420px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0">Payment Receipt</h3>
+        <button onclick="closeModal('receiptModal')" style="background:none;border:none;color:var(--text-light);font-size:24px;cursor:pointer">&times;</button>
+      </div>
+      <div id="receiptBody" style="padding:20px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border);text-align:center">
+        <div style="margin-bottom:12px">
+          <img src="assets/img/logo.svg" alt="SmartAtten" style="width:40px;height:40px">
+        </div>
+        <h4 style="font-size:16px;margin-bottom:4px">SmartAtten</h4>
+        <p style="font-size:11px;color:var(--text-light);margin-bottom:16px">Payment Receipt</p>
+        <div style="text-align:left;font-size:13px" id="receiptDetails"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn btn-outline" onclick="closeModal('receiptModal')">Close</button>
+        <button class="btn btn-primary" onclick="printReceipt()"><i class="fas fa-print"></i> Print</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    let payStudentId = null;
+
+    function renderFees() {
+      const classFilter = document.getElementById("classFilter").value;
+      const statusFilter = document.getElementById("statusFilter").value;
+      const search = document.getElementById("feeSearch").value.toLowerCase();
+      const today = new Date();
+      let fees = Store.getFees();
+
+      fees.forEach(f => { if (!f.balance) f.balance = f.total - f.paid; });
+
+      if (classFilter !== "all") fees = fees.filter(f => f.class === classFilter);
+      if (statusFilter !== "all") {
+        if (statusFilter === "overdue") {
+          fees = fees.filter(f => f.status !== "paid" && new Date(f.dueDate) < today);
+        } else {
+          fees = fees.filter(f => f.status === statusFilter);
+        }
+      }
+      if (search) fees = fees.filter(f => f.name.toLowerCase().includes(search) || f.roll.toLowerCase().includes(search));
+
+      const summary = Store.getFeeSummary();
+      document.getElementById("feeStats").innerHTML = [
+        { icon: "fa-wallet", value: "\u09F3" + (summary.totalPaid / 1000).toFixed(1) + "K", label: "Total Collected", color: "#00e676", sub: "of \u09F3" + (summary.totalCollectable / 1000).toFixed(1) + "K" },
+        { icon: "fa-hourglass-half", value: "\u09F3" + (summary.pendingTotal / 1000).toFixed(1) + "K", label: "Pending Amount", color: "#ffab00", sub: summary.pendingCount + " unpaid" },
+        { icon: "fa-percent", value: summary.rate + "%", label: "Collection Rate", color: "#0091A0", sub: summary.paidCount + " of " + summary.total + " paid" },
+        { icon: "fa-exclamation-triangle", value: summary.overdue, label: "Overdue", color: "#ff4060", sub: "past due date" }
+      ].map(s => `<div class="stat-card" style="border-left:3px solid ${s.color}">
+        <div class="stat-icon" style="background:${s.color}12;color:${s.color}"><i class="fas ${s.icon}"></i></div>
+        <div class="stat-info"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div><div style="font-size:10px;color:var(--text-muted);margin-top:2px">${s.sub}</div></div>
+      </div>`).join("");
+
+      document.getElementById("feeCount").textContent = fees.length + " record(s)";
+
+      const tbody = document.getElementById("feeTableBody");
+      tbody.innerHTML = fees.map(f => {
+        const pct = f.total ? Math.round((f.paid / f.total) * 100) : 0;
+        const balance = f.total - f.paid;
+        const isOverdue = f.status !== "paid" && new Date(f.dueDate) < today;
+        const displayStatus = isOverdue ? "overdue" : f.status;
+        const statusBadge = {
+          paid: '<span class="badge badge-success">Paid</span>',
+          partial: '<span class="badge badge-info">Partial</span>',
+          pending: '<span class="badge badge-warning">Pending</span>',
+          overdue: '<span class="badge badge-danger">Overdue</span>'
+        }[displayStatus] || '<span class="badge badge-ghost">' + f.status + '</span>';
+
+        const progressColor = pct >= 100 ? "var(--success)" : pct >= 50 ? "var(--warning)" : "var(--danger)";
+
+        return `<tr>
+          <td><div style="font-weight:500;font-size:13px">${f.name}</div><small style="color:var(--text-light)">${f.roll}</small></td>
+          <td style="font-size:13px">${f.class}</td>
+          <td style="font-size:12px"><span style="${isOverdue ? 'color:var(--danger);font-weight:600' : 'color:var(--text-light)'}">${formatDate(f.dueDate)}</span>${isOverdue ? '<br><small style="color:var(--danger)">Overdue</small>' : ''}</td>
+          <td style="font-size:13px;font-weight:600">\u09F3${f.total.toLocaleString()}</td>
+          <td style="font-size:13px;color:var(--success)">\u09F3${f.paid.toLocaleString()}</td>
+          <td style="font-size:13px;font-weight:600;color:${balance > 0 ? 'var(--warning)' : 'var(--text-light)'}">\u09F3${balance.toLocaleString()}</td>
+          <td style="min-width:130px">
+            <div class="fee-bar"><div class="fee-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${progressColor},${pct >= 100 ? 'var(--success)' : 'var(--primary)'})"></div></div>
+            <small style="color:var(--text-light);font-size:10px">${pct}%</small>
+          </td>
+          <td>${statusBadge}</td>
+          <td>
+            <div class="btn-group" style="gap:4px">
+              ${balance > 0 ? `<button class="btn btn-sm btn-primary" onclick="openPayment(${f.studentId})" style="padding:5px 10px;font-size:10px"><i class="fas fa-check"></i> Pay</button>` : ''}
+              <button class="btn btn-sm btn-outline" onclick="openHistory(${f.studentId})" style="padding:5px 10px;font-size:10px"><i class="fas fa-list"></i></button>
+              ${f.status === 'paid' ? `<button class="btn btn-sm btn-outline" onclick="openReceipt(${f.studentId})" style="padding:5px 10px;font-size:10px"><i class="fas fa-receipt"></i></button>` : ''}
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
+
+      if (!fees.length) {
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state" style="border:none"><i class="fas fa-wallet"></i><p>No fee records match your filters</p></div></td></tr>';
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return "-";
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    }
+
+    function openPayment(studentId) {
+      payStudentId = studentId;
+      const fees = Store.getFees();
+      const fee = fees.find(f => f.studentId === studentId);
+      if (!fee) return;
+      document.getElementById("payStudentName").textContent = fee.name + " (" + fee.roll + ")";
+      document.getElementById("payStudentMeta").textContent = fee.class + " \u2022 Total: \u09F3" + fee.total.toLocaleString();
+      document.getElementById("payBalanceDisplay").textContent = "\u09F3" + (fee.total - fee.paid).toLocaleString();
+      document.getElementById("payAmount").value = "";
+      document.getElementById("payAmount").max = fee.total - fee.paid;
+      document.getElementById("payDate").value = new Date().toISOString().split("T")[0];
+      document.getElementById("payMode").value = "online";
+      document.getElementById("payNotes").value = "";
+      document.getElementById("paymentModal").classList.add("active");
+    }
+
+    function submitPayment() {
+      const amount = parseInt(document.getElementById("payAmount").value);
+      if (!amount || amount <= 0) { App.showToast("Enter a valid amount", "error"); return; }
+      const fees = Store.getFees();
+      const fee = fees.find(f => f.studentId === payStudentId);
+      if (!fee) return;
+      if (amount > (fee.total - fee.paid)) { App.showToast("Amount exceeds balance", "error"); return; }
+      const mode = document.getElementById("payMode").value;
+      const notes = document.getElementById("payNotes").value;
+      Store.recordPayment(payStudentId, amount, mode, notes);
+      closeModal("paymentModal");
+      renderFees();
+      Store.logActivity("fee_recorded", `\u09F3${amount.toLocaleString()} received from ${fee.name} (${fee.roll}) — ${mode}`);
+      App.showToast("Payment of \u09F3" + amount.toLocaleString() + " recorded successfully", "success");
+
+      // Show receipt
+      setTimeout(() => openReceipt(payStudentId), 300);
+    }
+
+    function openHistory(studentId) {
+      const fees = Store.getFees();
+      const fee = fees.find(f => f.studentId === studentId);
+      if (!fee) return;
+      document.getElementById("histStudentName").textContent = fee.name + " (" + fee.roll + ")";
+      document.getElementById("histStudentMeta").textContent = fee.class + " \u2022 \u09F3" + fee.paid.toLocaleString() + " paid of \u09F3" + fee.total.toLocaleString();
+      const history = fee.paidHistory || [];
+      const container = document.getElementById("historyList");
+      const empty = document.getElementById("historyEmpty");
+      if (!history.length) {
+        container.innerHTML = "";
+        empty.style.display = "block";
+      } else {
+        empty.style.display = "none";
+        container.innerHTML = history.sort((a, b) => new Date(b.date) - new Date(a.date)).map(h => `
+          <div class="card" style="margin-bottom:8px;border-radius:var(--radius-sm)">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px">
+              <div>
+                <div style="font-weight:600;font-size:14px;color:var(--success)">+\u09F3${h.amount.toLocaleString()}</div>
+                <div style="font-size:11px;color:var(--text-light);margin-top:2px">
+                  ${formatDate(h.date)} \u2022 ${h.mode.charAt(0).toUpperCase() + h.mode.slice(1)}
+                </div>
+                ${h.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${h.notes}</div>` : ""}
+              </div>
+              <span class="badge badge-success">#${h.id}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+      document.getElementById("historyModal").classList.add("active");
+    }
+
+    function openReceipt(studentId) {
+      const fees = Store.getFees();
+      const fee = fees.find(f => f.studentId === studentId);
+      if (!fee) return;
+      const history = fee.paidHistory || [];
+      const lastPayment = history.length ? history[history.length - 1] : null;
+      if (!lastPayment) { App.showToast("No payment to receipt", "error"); return; }
+      document.getElementById("receiptDetails").innerHTML = `
+        <div style="display:grid;gap:8px">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-light)">Receipt #</span><span style="font-weight:600">RCP-${String(lastPayment.id).padStart(4, "0")}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-light)">Student</span><span style="font-weight:600">${fee.name}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-light)">Roll No</span><span>${fee.roll}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-light)">Class</span><span>${fee.class}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-light)">Amount</span><span style="font-weight:700;font-size:16px;color:var(--success)">\u09F3${lastPayment.amount.toLocaleString()}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-light)">Mode</span><span>${lastPayment.mode.charAt(0).toUpperCase() + lastPayment.mode.slice(1)}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-light)">Date</span><span>${formatDate(lastPayment.date)}</span></div>
+          ${lastPayment.notes ? `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-light)">Notes</span><span>${lastPayment.notes}</span></div>` : ""}
+          <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:var(--text-light)">Total Paid</span><span style="font-weight:700;color:var(--success)">\u09F3${fee.paid.toLocaleString()} / \u09F3${fee.total.toLocaleString()}</span></div>
+        </div>
+      `;
+      document.getElementById("receiptModal").classList.add("active");
+    }
+
+    function printReceipt() {
+      const content = document.getElementById("receiptBody").innerHTML;
+      const win = window.open("", "_blank");
+      win.document.write(`
+        <html><head><title>Payment Receipt</title>
+        <style>
+          body{font-family:'Inter',sans-serif;padding:40px;color:#1a1a2e;background:#fff}
+          .rcpt{max-width:380px;margin:0 auto;padding:24px;border:1px solid #e0e0e0;border-radius:12px}
+          .rcpt h4{font-size:18px;margin:0 0 4px}
+          .rcpt p{font-size:12px;color:#888;margin:0 0 20px}
+          .rcpt .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+          .rcpt .row .lbl{color:#888}
+          .rcpt .row .val{font-weight:600}
+          .rcpt .total{font-size:18px;font-weight:700;color:#00b7c8;padding-top:12px}
+          .rcpt img{width:40px;height:40px}
+          @media print{body{padding:0}.rcpt{border:none;padding:0}}
+        </style></head>
+        <body><div class="rcpt">${content}</div><script>window.print();window.close();<\/script></body></html>
+      `);
+      win.document.close();
+    }
+
+    function showFeeStructure() {
+      const sel = document.getElementById("structClassFilter");
+      sel.innerHTML = AppData.classes.map(c => `<option value="${c}">${c}</option>`).join("");
+      sel.value = "CSE-A";
+      renderFeeStructure();
+      document.getElementById("structureModal").classList.add("active");
+    }
+
+    function renderFeeStructure() {
+      const cls = document.getElementById("structClassFilter").value;
+      const fs = AppData.feeStructure[cls];
+      if (!fs) { document.getElementById("structureBody").innerHTML = '<div class="empty-state"><p>No fee structure defined</p></div>'; return; }
+      const pctUsed = fs.total ? Math.round(((fs.tuition + fs.lab + fs.library + fs.sports) / fs.total) * 100) : 0;
+      document.getElementById("structureBody").innerHTML = `
+        <div style="display:grid;gap:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div><span style="font-size:20px;font-weight:700">${cls}</span></div>
+            <div style="text-align:right"><div style="font-size:24px;font-weight:800;color:var(--primary)">\u09F3${fs.total.toLocaleString()}</div><div style="font-size:11px;color:var(--text-light)">Total Fee</div></div>
+          </div>
+          <div class="card" style="border-radius:var(--radius-sm)">
+            <div style="padding:16px;display:grid;gap:10px">
+              ${[
+                { label: "Tuition Fee", amount: fs.tuition, color: "#0091A0" },
+                { label: "Lab Fee", amount: fs.lab, color: "#8b5cf6" },
+                { label: "Library Fee", amount: fs.library, color: "#ffab00" },
+                { label: "Sports Fee", amount: fs.sports, color: "#00e676" }
+              ].map(item => `
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:10px;height:10px;border-radius:3px;background:${item.color}"></div>
+                    <span style="font-size:13px">${item.label}</span>
+                  </div>
+                  <span style="font-weight:600">\u09F3${item.amount.toLocaleString()}</span>
+                </div>
+              `).join("")}
+              <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;font-weight:700;font-size:15px">
+                <span>Total</span>
+                <span style="color:var(--primary)">\u09F3${fs.total.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-light);margin-top:4px">Fee structure for academic year 2025-2026</div>
+        </div>
+      `;
+    }
+
+    function exportFeesCSV() {
+      const fees = Store.getFees();
+      const rows = [["Student Name", "Roll No", "Class", "Due Date", "Total", "Paid", "Balance", "Status"]];
+      fees.forEach(f => {
+        rows.push([f.name, f.roll, f.class, f.dueDate, f.total, f.paid, f.total - f.paid, f.status]);
+      });
+      const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "SmartAtten_Fee_Report_" + new Date().toISOString().split("T")[0] + ".csv";
+      link.click();
+      App.showToast("Fee report exported", "success");
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove("active");
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const classSel = document.getElementById("classFilter");
+      const uniqueClasses = [...new Set(Store.getFees().map(f => f.class))].sort();
+      classSel.innerHTML = '<option value="all">All Classes</option>' + uniqueClasses.map(c => `<option value="${c}">${c}</option>`).join("");
+
+      setTimeout(renderFees, 200);
+    });
+  </script>
+</body>
+</html>

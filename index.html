@@ -1,0 +1,315 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartAtten - Login</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <script>!function(){var t=localStorage.getItem("institrack_theme")||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");document.documentElement.setAttribute("data-theme",t)}();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-deep);position:relative;overflow:hidden}
+    .login-bg-glow{position:absolute;width:600px;height:600px;border-radius:50%;pointer-events:none;filter:blur(120px);opacity:0.12}
+    .login-bg-glow:nth-child(1){top:-200px;right:-100px;background:var(--primary)}
+    .login-bg-glow:nth-child(2){bottom:-200px;left:-100px;background:#6366f1}
+    .login-grid{display:grid;grid-template-columns:1fr 1fr;max-width:960px;width:100%;margin:20px;min-height:540px}
+    .login-brand{background:linear-gradient(135deg,rgba(0,145,160,0.12),rgba(99,102,241,0.08));backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius-lg) 0 0 var(--radius-lg);padding:52px 44px;display:flex;flex-direction:column;justify-content:center}
+    .login-brand-icon{width:64px;height:64px;margin-bottom:16px}
+    .login-brand h1{font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:8px}
+    .login-brand p{color:var(--text-light);font-size:13px;line-height:1.7;margin-bottom:24px}
+    .login-brand-features{display:flex;flex-direction:column;gap:10px}
+    .login-brand-features span{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-light)}
+    .login-brand-features i{color:var(--success);font-size:12px}
+
+    /* ===== RIGHT PANEL ===== */
+    .login-form-wrap{background:rgba(10,16,30,0.95);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:0 var(--radius-lg) var(--radius-lg) 0;padding:36px 36px;display:flex;flex-direction:column;justify-content:center}
+    .login-tabs{display:flex;gap:6px;margin-bottom:24px;padding:4px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border)}
+    .login-tab{flex:1;padding:10px 20px;text-align:center;border:none;background:transparent;color:var(--text-light);border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:var(--transition);font-family:var(--font)}
+    .login-tab:hover{color:var(--text)}
+    .login-tab.active{background:var(--primary);color:#fff;box-shadow:0 4px 20px var(--primary-glow)}
+
+    /* ===== INPUT GROUP - consistent icon alignment ===== */
+    .input-group{position:relative;margin-bottom:16px}
+    .input-group .ig-icon{position:absolute;left:0;top:0;bottom:0;width:46px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:15px;pointer-events:none;z-index:1}
+    .input-group input,.input-group select{width:100%;padding:13px 16px 13px 46px;font-size:14px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);font-family:var(--font);transition:var(--transition);outline:none;box-sizing:border-box;height:48px}
+    .input-group input:focus,.input-group select:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+    .input-group select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23ffffff50' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+    .input-group .ig-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;border-radius:6px;transition:var(--transition)}
+    .input-group .ig-toggle:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+
+    /* ===== ROW LAYOUT ===== */
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+    /* ===== SECTION HEADER ===== */
+    .section-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin:20px 0 12px;display:flex;align-items:center;gap:10px}
+    .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+    .section-label:first-of-type{margin-top:0}
+
+    /* ===== SUBMIT ===== */
+    .login-btn{width:100%;padding:14px;margin-top:18px;justify-content:center;font-size:15px;border-radius:10px;height:50px}
+    .form-error{font-size:12px;color:var(--danger);margin-top:6px;display:none;text-align:center}
+    .form-error.show{display:block}
+
+    /* ===== DEMO / DIVIDER ===== */
+    .demo-btns{display:flex;gap:10px;margin-top:18px}
+    .demo-btn{flex:1;padding:10px;font-size:12px;font-weight:500;border-radius:10px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-light);cursor:pointer;transition:var(--transition);text-align:center;font-family:var(--font);height:44px;display:flex;align-items:center;justify-content:center;gap:6px}
+    .demo-btn:hover{border-color:var(--primary);color:var(--primary);background:rgba(0,145,160,0.06)}
+    .forgot-link{font-size:12px;color:var(--text-muted);cursor:pointer;text-align:right;display:block;margin-top:4px;transition:var(--transition)}
+    .forgot-link:hover{color:var(--primary)}
+    .remember-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-light);margin-bottom:12px}
+    .remember-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;margin:0}
+    .divider-text{display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-muted);margin:16px 0 0}
+    .divider-text::before,.divider-text::after{content:'';flex:1;height:1px;background:var(--border)}
+    .pw-hint{font-size:10px;color:var(--text-muted);margin:8px 0 0;padding-left:4px}
+
+      @media(max-width:768px){
+      .login-grid{grid-template-columns:1fr;max-width:420px}
+      .login-brand{display:none}
+      .login-form-wrap{border-radius:var(--radius-lg)}
+      .form-row,.form-row-3{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="toast-container"></div>
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-logo"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:52px;height:52px;display:block"></div>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    <div class="loading-text">Loading SmartAtten</div>
+  </div>
+  <div class="login-page">
+    <div class="login-bg-glow"></div>
+    <div class="login-bg-glow"></div>
+    <div class="login-grid">
+      <div class="login-brand">
+        <div class="login-brand-icon"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:64px;height:64px;display:block"></div>
+        <h1>SmartAtten</h1>
+        <p>Cinematic AI-powered attendance management system with real-time analytics, smart recommendations, and immersive experience.</p>
+        <div class="login-brand-features">
+          <span><i class="fas fa-check-circle"></i> AI-powered attendance tracking</span>
+          <span><i class="fas fa-check-circle"></i> Real-time analytics & reports</span>
+          <span><i class="fas fa-check-circle"></i> Smart recommendations engine</span>
+          <span><i class="fas fa-check-circle"></i> Multi-department support</span>
+        </div>
+      </div>
+      <div class="login-form-wrap">
+        <div class="login-tabs">
+          <button class="login-tab active" onclick="switchTab(this,'signin')">Sign In</button>
+          <button class="login-tab" onclick="switchTab(this,'register')">Create Account</button>
+        </div>
+
+        <!-- SIGN IN -->
+        <form id="signinForm" onsubmit="handleSignIn(event)">
+          <div class="input-group">
+            <span class="ig-icon"><i class="fas fa-envelope"></i></span>
+            <input type="text" id="loginId" placeholder="Email or Employee ID" required autocomplete="username">
+          </div>
+          <div class="input-group">
+            <span class="ig-icon"><i class="fas fa-lock"></i></span>
+            <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
+            <button type="button" class="ig-toggle" onclick="togglePw('loginPassword',this)"><i class="fas fa-eye"></i></button>
+          </div>
+          <div class="remember-row">
+            <input type="checkbox" id="rememberMe"> <label for="rememberMe">Remember me</label>
+            <span style="flex:1"></span>
+            <span class="forgot-link" onclick="forgotPw()">Forgot password?</span>
+          </div>
+          <button type="submit" class="btn btn-primary login-btn"><i class="fas fa-arrow-right"></i> Sign In</button>
+          <div id="signinError" class="form-error"></div>
+          <div class="divider-text">or continue as</div>
+          <div class="demo-btns">
+            <button type="button" class="demo-btn" onclick="demoLogin('teacher')"><i class="fas fa-chalkboard-teacher"></i> Teacher</button>
+          </div>
+            <div id="principalLink" style="text-align:center;margin-top:10px;display:none">
+            <a href="principal-dashboard.html#a" style="font-size:10px;color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:4px"><i class="fas fa-crown" style="color:var(--primary)"></i> Principal Access</a>
+          </div>
+        </form>
+
+        <!-- REGISTER -->
+        <form id="registerForm" style="display:none" onsubmit="handleRegister(event)">
+          <div class="section-label">Personal Info</div>
+          <div class="form-row">
+            <div class="input-group">
+              <span class="ig-icon"><i class="fas fa-user"></i></span>
+              <input type="text" id="regName" placeholder="Full name" required>
+            </div>
+            <div class="input-group">
+              <span class="ig-icon"><i class="fas fa-id-card"></i></span>
+              <input type="text" id="regEmpId" placeholder="Employee ID">
+            </div>
+          </div>
+
+          <div class="section-label">Account</div>
+          <div class="input-group">
+            <span class="ig-icon"><i class="fas fa-envelope"></i></span>
+            <input type="email" id="regEmail" placeholder="Email address" required>
+          </div>
+          <div class="form-row">
+            <div class="input-group">
+              <span class="ig-icon"><i class="fas fa-lock"></i></span>
+              <input type="password" id="regPassword" placeholder="Password" minlength="6" required>
+              <button type="button" class="ig-toggle" onclick="togglePw('regPassword',this)"><i class="fas fa-eye"></i></button>
+            </div>
+            <div class="input-group">
+              <span class="ig-icon"><i class="fas fa-check-circle"></i></span>
+              <input type="password" id="regConfirm" placeholder="Confirm password" required>
+            </div>
+          </div>
+
+          <div class="section-label">Role & Department</div>
+          <div class="form-row">
+            <div class="input-group">
+              <span class="ig-icon"><i class="fas fa-briefcase"></i></span>
+              <select id="regRole" required onchange="onRoleChange()">
+                <option value="">Select role</option>
+                <option value="teacher">Teacher</option>
+
+              </select>
+            </div>
+            <div class="input-group">
+              <span class="ig-icon"><i class="fas fa-building"></i></span>
+              <select id="regDept">
+                <option value="">Department (optional)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Role-specific fields: employee ID for staff -->
+          <div id="staffFields" style="display:none">
+            <div class="input-group">
+              <span class="ig-icon"><i class="fas fa-id-card"></i></span>
+              <input type="text" id="regEmpId" placeholder="Employee ID (required)">
+            </div>
+          </div>
+
+          <div class="section-label">Contact</div>
+          <div class="input-group">
+            <span class="ig-icon"><i class="fas fa-phone"></i></span>
+            <input type="tel" id="regPhone" placeholder="Phone number (optional)">
+          </div>
+
+          <p class="pw-hint"><i class="fas fa-info-circle" style="margin-right:4px"></i>Password: min 6 chars, 1 uppercase, 1 number</p>
+          <button type="submit" class="btn btn-primary login-btn"><i class="fas fa-user-plus"></i> Create Account</button>
+          <div id="regError" class="form-error"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    let activeTab = "signin";
+
+    document.addEventListener("DOMContentLoaded",()=>{
+      if(!localStorage.getItem(UserStore.key)) UserStore.seedUsers();
+      const deptSel=document.getElementById("regDept");
+      AppData.departments.forEach(d=>deptSel.innerHTML+=`<option value="${d.name}">${d.name}</option>`);
+
+      const saved=localStorage.getItem("institrack_user");
+      const rem=localStorage.getItem("institrack_remember");
+      if(saved&&rem==="true"){
+        const u=JSON.parse(saved);
+        const fresh=UserStore.getUsers().find(x=>x.email===u.email&&x.employeeId===u.employeeId);
+        if(fresh){ redirect(fresh); return; }
+      }
+      var seq=[], magic="admin";
+      document.addEventListener("keydown",function(e){
+        seq.push(e.key.toLowerCase());
+        if (seq.length>magic.length) seq.shift();
+        if (seq.join("")===magic) {
+          document.getElementById("principalLink").style.display="block";
+          seq=[];
+        }
+      });
+      const ls=document.getElementById("loadingScreen");
+      setTimeout(()=>ls.classList.add("hidden"),800);
+      App.init();
+    });
+
+    function redirect(user){
+      App.showToast("Welcome back, "+user.name,"success");
+      const map={admin:"admin-dashboard.html",teacher:"dashboard.html"};
+      setTimeout(()=>{window.location.href=map[user.role]||"dashboard.html"},500);
+    }
+
+    function switchTab(el,tab){
+      activeTab=tab;
+      document.querySelectorAll(".login-tab").forEach(t=>t.classList.remove("active"));
+      el.classList.add("active");
+      document.getElementById("signinForm").style.display=tab==="signin"?"":"none";
+      document.getElementById("registerForm").style.display=tab==="register"?"":"none";
+      ["signinError","regError"].forEach(id=>document.getElementById(id).classList.remove("show"));
+    }
+
+    function onRoleChange(){
+      const role=document.getElementById("regRole").value;
+      document.getElementById("staffFields").style.display=role==="teacher"?"":"none";
+    }
+
+    function togglePw(id,btn){
+      const inp=document.getElementById(id);
+      const isPw=inp.type==="password";
+      inp.type=isPw?"text":"password";
+      btn.innerHTML=isPw?'<i class="fas fa-eye-slash"></i>':'<i class="fas fa-eye"></i>';
+    }
+
+    function demoLogin(role){
+      const creds={teacher:{email:"teacher@institrack.ai",pw:"teacher123"}};
+      const c=creds[role];
+      if(!c){document.getElementById("signinError").textContent="Demo account not found. Reset data?";document.getElementById("signinError").classList.add("show");return;}
+      const user=UserStore.login(c.email,c.pw);
+      if(!user){document.getElementById("signinError").textContent="Demo accounts not found. Reset data?";document.getElementById("signinError").classList.add("show");return;}
+      localStorage.setItem("institrack_user",JSON.stringify(user));
+      redirect(user);
+    }
+
+    function handleSignIn(e){
+      e.preventDefault();
+      const id=document.getElementById("loginId").value.trim();
+      const pw=document.getElementById("loginPassword").value;
+      const err=document.getElementById("signinError");
+      const rem=document.getElementById("rememberMe").checked;
+      if(!id||!pw){err.textContent="Please enter your credentials";err.classList.add("show");return;}
+      const user=UserStore.login(id,pw);
+      if(!user){err.textContent="Invalid credentials";err.classList.add("show");return;}
+      localStorage.setItem("institrack_user",JSON.stringify(user));
+      localStorage.setItem("institrack_remember",rem?"true":"false");
+      redirect(user);
+    }
+
+    function handleRegister(e){
+      e.preventDefault();
+      const err=document.getElementById("regError");
+      const name=document.getElementById("regName").value.trim();
+      const email=document.getElementById("regEmail").value.trim();
+      const pw=document.getElementById("regPassword").value;
+      const cpw=document.getElementById("regConfirm").value;
+      const role=document.getElementById("regRole").value;
+      const dept=document.getElementById("regDept").value;
+      const phone=document.getElementById("regPhone").value.trim();
+      if(!name||!email||!pw||!cpw||!role){err.textContent="Please fill all required fields";err.classList.add("show");return;}
+      if(pw!==cpw){err.textContent="Passwords do not match";err.classList.add("show");return;}
+      const payload={name,email,password:pw,role,department:dept,phone};
+      const empId=document.getElementById("regEmpId").value.trim();
+      if(!empId){err.textContent="Employee ID is required";err.classList.add("show");return;}
+      payload.employeeId=empId;
+      const result=UserStore.register(payload);
+      if(!result.ok){err.textContent=result.msg;err.classList.add("show");return;}
+      App.showToast("Account created! You can now sign in.","success");
+      switchTab(document.querySelectorAll(".login-tab")[0],"signin");
+      document.getElementById("loginId").value=email;
+      document.getElementById("loginPassword").value="";
+      document.getElementById("rememberMe").checked=false;
+    }
+
+    function forgotPw(){
+      App.showToast("Contact admin to reset your password.","info");
+    }
+  </script>
+</body>
+</html>

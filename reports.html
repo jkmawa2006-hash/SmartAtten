@@ -1,0 +1,244 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports - SmartAtten</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <script>!function(){var t=localStorage.getItem("institrack_theme")||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");document.documentElement.setAttribute("data-theme",t)}();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>.filter-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}</style>
+</head>
+<body>
+  <div class="toast-container"></div>
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-logo"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:52px;height:52px;display:block"></div>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    <div class="loading-text">Loading Reports</div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:24px;height:24px;display:block"></div>
+      <div class="logo-text">SmartAtten</div>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Main</div>
+      <a href="dashboard.html" class="nav-link"><i class="fas fa-th-large"></i> <span>Dashboard</span></a>
+      <a href="attendance.html" class="nav-link"><i class="fas fa-clipboard-check"></i> <span>Attendance</span></a>
+      <a href="reports.html" class="nav-link active"><i class="fas fa-chart-bar"></i> <span>Reports</span></a>
+      <a href="students.html" class="nav-link"><i class="fas fa-users"></i> <span>Students</span></a>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Management</div>
+      <a href="absenteeism.html" class="nav-link"><i class="fas fa-user-graduate"></i> <span>Absenteeism</span></a>
+      <a href="timetable.html" class="nav-link"><i class="fas fa-calendar-alt"></i> <span>Timetable</span></a>
+      <a href="leaves.html" class="nav-link"><i class="fas fa-door-open"></i> <span>Leaves</span></a>
+      <a href="fees.html" class="nav-link"><i class="fas fa-wallet"></i> <span>Fees</span></a>
+    </div>
+    <div class="nav-section" style="margin-top:auto;border-top:1px solid var(--border);padding-top:16px">
+      <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> <span>Settings</span></a>
+      <a href="#" onclick="App.logout()" class="nav-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+        <h3 style="font-size:16px;font-weight:700;letter-spacing:-0.3px">Reports & Analytics</h3>
+        <span class="live-clock"></span>
+      </div>
+      <div class="topbar-right">
+        <span class="badge badge-info" id="roleBadge" style="font-size:9px">Teacher</span>
+
+        <button class="theme-toggle"><i class="fas fa-moon"></i></button>
+        <button class="notif-btn"><i class="fas fa-bell"></i><span class="notif-badge" id="notifCount">0</span></button>
+        <div class="user-avatar" id="avatarEl"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="tabs">
+        <button class="tab active" data-tab="charts"><i class="fas fa-chart-pie"></i> Analytics</button>
+        <button class="tab" data-tab="ai"><i class="fas fa-robot"></i> AI Recommendations</button>
+      </div>
+
+      <div id="chartsTab" class="tab-content">
+        <div class="filter-bar">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Class</label>
+            <select id="reportClass"><option value="">All Classes</option></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Subject</label>
+            <select id="reportSubject"><option value="">All Subjects</option></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Period</label>
+            <select id="reportPeriod">
+              <option value="7">Last 7 Days</option>
+              <option value="15">Last 15 Days</option>
+              <option value="30" selected>Last 30 Days</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:8px">
+            <button class="btn btn-primary" id="applyReportFilter"><i class="fas fa-filter"></i> Apply</button>
+            <button class="btn btn-outline" id="exportCSV"><i class="fas fa-file-csv"></i> Export</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:24px">
+          <div class="card"><div class="card-header"><h4>Attendance Trend</h4></div><div class="card-body"><canvas id="trendChart" height="200"></canvas></div></div>
+          <div class="card"><div class="card-header"><h4>Distribution</h4></div><div class="card-body"><canvas id="distChart" height="200"></canvas></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h4>Detailed Records</h4>
+            <small style="color:var(--text-light)" id="recordCount"></small>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-container" style="border:none;border-radius:0;max-height:400px;overflow-y:auto">
+              <table>
+                <thead><tr><th>Date</th><th>Student</th><th>Roll</th><th>Subject</th><th>Status</th></tr></thead>
+                <tbody id="recordsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="aiTab" class="tab-content" style="display:none">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header"><h4>Weekly AI Trend</h4></div>
+          <div class="card-body"><canvas id="weeklyAIChart" height="200"></canvas></div>
+        </div>
+        <div id="aiContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/ai-recommend.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    let trendChartInstance = null, distChartInstance = null, weeklyAIInstance = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+      AppData.classes.forEach(c => { document.getElementById("reportClass").innerHTML += `<option value="${c}">${c}</option>`; });
+      AppData.subjects.forEach(s => { document.getElementById("reportSubject").innerHTML += `<option value="${s}">${s}</option>`; });
+
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.addEventListener("click", function() {
+          document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+          document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
+          this.classList.add("active");
+          document.getElementById(this.dataset.tab + "Tab").style.display = "block";
+          if (this.dataset.tab === "ai") { renderAIRecommendations(); renderWeeklyChartAI(); }
+          else renderCharts();
+        });
+      });
+
+      document.getElementById("applyReportFilter").addEventListener("click", renderCharts);
+      document.getElementById("exportCSV").addEventListener("click", exportToCSV);
+
+      setTimeout(() => {
+        if (window.location.hash === "#ai") document.querySelector('[data-tab="ai"]')?.click();
+        else renderCharts();
+      }, 300);
+
+      window.addEventListener("hashchange", () => {
+        if (window.location.hash === "#ai") document.querySelector('[data-tab="ai"]')?.click();
+      });
+    });
+
+    function renderCharts() {
+      const classFilter = document.getElementById("reportClass").value;
+      const subjectFilter = document.getElementById("reportSubject").value;
+      const period = parseInt(document.getElementById("reportPeriod").value);
+
+      let records = Store.getAttendance();
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - period);
+      records = records.filter(r => new Date(r.date) >= cutoff);
+      if (classFilter) records = records.filter(r => r.class === classFilter);
+      if (subjectFilter) records = records.filter(r => r.subject === subjectFilter);
+
+      const dayMap = {};
+      let totalPresent = 0, totalAbsent = 0, totalLeave = 0;
+      records.forEach(r => {
+        if (!dayMap[r.date]) dayMap[r.date] = { present: 0, absent: 0, leave: 0, total: 0 };
+        dayMap[r.date].total++;
+        if (r.status === "present") { dayMap[r.date].present++; totalPresent++; }
+        else if (r.status === "absent") { dayMap[r.date].absent++; totalAbsent++; }
+        else { dayMap[r.date].leave++; totalLeave++; }
+      });
+
+      const dates = Object.keys(dayMap).sort();
+      const trendData = dates.map(d => dayMap[d].total ? Math.round((dayMap[d].present / dayMap[d].total) * 100) : 0);
+
+      document.getElementById("recordCount").textContent = `${records.length} records found`;
+
+      const recordsBody = document.getElementById("recordsTable");
+      recordsBody.innerHTML = records.slice(-50).reverse().map(r => `
+        <tr><td>${r.date}</td><td>${r.name}</td><td>${r.roll}</td><td>${r.subject}</td>
+        <td><span class="badge ${r.status === 'present' ? 'badge-success' : r.status === 'absent' ? 'badge-danger' : 'badge-warning'}">${r.status}</span></td></tr>
+      `).join("");
+
+      if (trendChartInstance) trendChartInstance.destroy();
+      trendChartInstance = new Chart(document.getElementById("trendChart"), {
+        type: "line",
+        data: {
+          labels: dates.map(d => { const dt = new Date(d); return dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" }); }),
+          datasets: [{ label: "Attendance %", data: trendData, borderColor: "#0091A0", backgroundColor: "rgba(0,145,160,0.1)", fill: true, tension: 0.4, pointBackgroundColor: "#0091A0" }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: "rgba(255,255,255,0.04)" } }, x: { grid: { display: false } } } }
+      });
+
+      if (distChartInstance) distChartInstance.destroy();
+      distChartInstance = new Chart(document.getElementById("distChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Present", "Absent", "Leave"],
+          datasets: [{ data: [totalPresent, totalAbsent, totalLeave], backgroundColor: ["#0091A0", "#ff4060", "#ffab00"], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+      });
+    }
+
+    function renderWeeklyChartAI() {
+      if (weeklyAIInstance) weeklyAIInstance.destroy();
+      const trend = getWeeklyTrend();
+      weeklyAIInstance = new Chart(document.getElementById("weeklyAIChart"), {
+        type: "bar",
+        data: {
+          labels: trend.map(t => t.day),
+          datasets: [{
+            label: "Attendance %", data: trend.map(t => t.pct),
+            backgroundColor: trend.map(t => t.pct >= 75 ? "#0091A0" : t.pct >= 60 ? "#f59e0b" : "#ef4444"),
+            borderRadius: 6
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: "rgba(255,255,255,0.04)" } }, x: { grid: { display: false } } } }
+      });
+    }
+
+    function exportToCSV() {
+      const records = Store.getAttendance();
+      let csv = "Date,Student,Roll,Class,Subject,Status,MarkedBy\n";
+      records.forEach(r => { csv += `${r.date},${r.name},${r.roll},${r.class},${r.subject},${r.status},${r.markedBy}\n`; });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `attendance_report_${new Date().toISOString().split("T")[0]}.csv`; a.click();
+      URL.revokeObjectURL(url);
+      App.showToast("CSV exported successfully", "success");
+    }
+  </script>
+</body>
+</html>

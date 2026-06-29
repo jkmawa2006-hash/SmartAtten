@@ -1,0 +1,324 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timetable - SmartAtten</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <script>!function(){var t=localStorage.getItem("institrack_theme")||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");document.documentElement.setAttribute("data-theme",t)}();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* ===== DAY TABS ===== */
+    .day-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+    .day-tab{padding:8px 16px;font-size:12px;font-weight:500;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:var(--transition);color:var(--text-light);font-family:var(--font)}
+    .day-tab:hover{border-color:var(--border-light);color:var(--text)}
+    .day-tab.active{background:rgba(0,145,160,0.1);border-color:var(--primary);color:var(--primary)}
+    .day-tab.today{font-weight:600}
+    .day-tab.today::after{content:' Â· Now';font-weight:400;color:var(--primary);font-size:10px}
+    .day-tab.holiday{color:var(--danger)}.day-tab.holiday.active{border-color:var(--danger);color:var(--danger);background:rgba(255,64,96,0.08)}
+
+    /* ===== CLASS CARDS ===== */
+    .tt-card{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;transition:var(--transition)}
+    .tt-card:hover{border-color:var(--border-light);box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+    .tt-card.past{opacity:0.45}
+    .tt-card.active{border-left:3px solid var(--primary);background:rgba(0,145,160,0.04)}
+    .tt-card.now{border-left:3px solid var(--danger);background:rgba(255,64,96,0.05);border-color:rgba(255,64,96,0.12)}
+    .tt-card .subj-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .tt-card .subj-body{flex:1;min-width:0}
+    .tt-card .subj-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+    .tt-card .subj-name .now-badge{display:inline-block;font-size:8px;font-weight:700;text-transform:uppercase;background:var(--danger);color:#fff;padding:1px 5px;border-radius:3px;animation:pulse 2s infinite}
+    .tt-card .subj-meta{display:flex;gap:14px;font-size:11px;color:var(--text-light);margin-top:2px;flex-wrap:wrap}
+    .tt-card .subj-meta span{display:inline-flex;align-items:center;gap:4px}
+    .tt-card .subj-time{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;padding:4px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px}
+    .tt-card.now .subj-time{color:var(--danger);border-color:rgba(255,64,96,0.2);background:rgba(255,64,96,0.06)}
+
+    /* ===== HOLIDAY ===== */
+    .holiday-box{text-align:center;padding:48px 20px;border:2px dashed var(--border);border-radius:12px}
+    .holiday-box .h-icon{font-size:36px;margin-bottom:8px;opacity:0.3}
+    .holiday-box .h-title{font-size:18px;font-weight:700}
+    .holiday-box .h-sub{font-size:12px;color:var(--text-light);margin-top:4px}
+
+    /* ===== FILTERS ROW ===== */
+    .filter-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap}
+    .filter-row .form-group{margin:0;min-width:130px}
+    .filter-row .form-label{font-size:10px;margin-bottom:2px}
+    .filter-row select{font-size:11px;padding:6px 28px 6px 10px}
+
+    /* ===== LEGEND ===== */
+    .tt-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+    .tt-legend span{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;font-size:10px;color:var(--text-light);background:var(--bg-card);border-radius:10px;border:1px solid var(--border)}
+    .tt-legend .ld{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+    /* ===== STAT BAR ===== */
+    .stat-row{display:flex;gap:8px;margin-top:12px}
+    .stat-item{flex:1;padding:10px;text-align:center;border-radius:8px;background:var(--bg-card);border:1px solid var(--border)}
+    .stat-item .num{font-size:18px;font-weight:700}
+    .stat-item .lbl{font-size:10px;color:var(--text-muted);margin-top:1px}
+    .stat-item.highlight{background:rgba(0,145,160,0.06);border-color:rgba(0,145,160,0.15)}
+
+    /* ===== LIST VIEW ===== */
+    .list-search{position:relative}
+    .list-search i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:11px}
+    .list-search input{padding:6px 10px 6px 28px;font-size:11px;width:180px;border-radius:20px}
+
+    .view-pills{display:flex;gap:4px;padding:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px}
+    .view-pill{padding:5px 12px;font-size:11px;font-weight:500;border-radius:6px;cursor:pointer;transition:var(--transition);color:var(--text-light);font-family:var(--font)}
+    .view-pill.active{background:var(--primary);color:#fff}
+
+    @media(max-width:768px){
+      .tt-card{flex-wrap:wrap;gap:8px}
+      .tt-card .subj-time{width:100%;text-align:left}
+      .stat-row{flex-wrap:wrap}.stat-item{flex:1 0 calc(50% - 4px)}
+    }
+  </style>
+</head>
+<body>
+  <div class="toast-container"></div>
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-logo"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:52px;height:52px;display:block"></div>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    <div class="loading-text">Loading Schedule</div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:24px;height:24px;display:block"></div>
+      <div class="logo-text">SmartAtten</div>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Main</div>
+      <a href="dashboard.html" class="nav-link"><i class="fas fa-th-large"></i> <span>Dashboard</span></a>
+      <a href="attendance.html" class="nav-link"><i class="fas fa-clipboard-check"></i> <span>Attendance</span></a>
+      <a href="reports.html" class="nav-link"><i class="fas fa-chart-bar"></i> <span>Reports</span></a>
+      <a href="students.html" class="nav-link"><i class="fas fa-users"></i> <span>Students</span></a>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Management</div>
+      <a href="absenteeism.html" class="nav-link"><i class="fas fa-user-graduate"></i> <span>Absenteeism</span></a>
+      <a href="timetable.html" class="nav-link active"><i class="fas fa-calendar-alt"></i> <span>Timetable</span></a>
+      <a href="leaves.html" class="nav-link"><i class="fas fa-door-open"></i> <span>Leaves</span></a>
+      <a href="fees.html" class="nav-link"><i class="fas fa-wallet"></i> <span>Fees</span></a>
+    </div>
+    <div class="nav-section" style="margin-top:auto;border-top:1px solid var(--border);padding-top:16px">
+      <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> <span>Settings</span></a>
+      <a href="#" onclick="App.logout()" class="nav-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+        <h3 style="font-size:16px;font-weight:700;letter-spacing:-0.3px">Weekly Schedule</h3>
+        <span class="live-clock"></span>
+      </div>
+      <div class="topbar-right">
+        <span class="badge badge-info" id="roleBadge" style="font-size:9px">Teacher</span>
+
+        <button class="theme-toggle"><i class="fas fa-moon"></i></button>
+        <button class="notif-btn"><i class="fas fa-bell"></i><span class="notif-badge" id="notifCount">0</span></button>
+        <div class="user-avatar" id="avatarEl"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- Filters -->
+      <div class="filter-row">
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <select id="ttDept" onchange="updateDept()"><option value="All">All</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Class</label>
+          <select id="ttClass" onchange="render()"><option value="All">All</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teacher</label>
+          <select id="ttTeacher" onchange="render()"><option value="All">All</option></select>
+        </div>
+        <div class="view-pills">
+          <span class="view-pill active" data-v="day" onclick="switchView('day',this)"><i class="fas fa-list"></i> Day</span>
+          <span class="view-pill" data-v="week" onclick="switchView('week',this)"><i class="fas fa-calendar-week"></i> Week</span>
+          <span class="view-pill" data-v="list" onclick="switchView('list',this)"><i class="fas fa-table"></i> Table</span>
+        </div>
+      </div>
+
+      <!-- Day tabs -->
+      <div class="day-tabs" id="dayTabs"></div>
+
+      <!-- Day View -->
+      <div id="dayView">
+        <div class="card">
+          <div class="card-header">
+            <h4 id="dayTitle">Today</h4>
+            <span style="font-size:11px;color:var(--text-light)" id="dayStats"></span>
+          </div>
+          <div class="card-body" id="dayBody"></div>
+        </div>
+      </div>
+
+      <!-- Week View -->
+      <div id="weekView" style="display:none">
+        <div class="card">
+          <div class="card-header"><h4>This Week</h4></div>
+          <div class="card-body" id="weekBody"></div>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div id="listView" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <h4>Full Schedule</h4>
+            <div class="list-search">
+              <i class="fas fa-search"></i>
+              <input type="text" id="listSearch" placeholder="Search..." oninput="renderList()">
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-container" style="border:none;border-radius:0">
+              <table>
+                <thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Class</th><th>Teacher</th><th>Room</th></tr></thead>
+                <tbody id="ttBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend + Stats -->
+      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+        <div class="tt-legend" id="legendArea" style="flex:1"></div>
+        <div class="stat-row" id="statRow" style="flex-shrink:0;margin-top:0;min-width:320px"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    const COLORS = ["#0091A0","#6366f1","#ec4899","#f59e0b","#10b981","#8b5cf6","#ef4444","#06b6d4","#f97316","#14b8a6","#d946ef","#0ea5e9","#84cc16","#e11d48","#65a30d"];
+    const PERIODS = ["09:00-10:00","10:00-11:00","11:15-12:15","01:15-02:15","02:15-03:15"];
+    const DAYS = ["Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday"];
+    const LABELS = ["Sat","Sun","Mon","Tue","Wed","Thu"];
+    let curView = "day", selDay = null, tick = null;
+
+    function subjColor(s) { let h=0; for(let c of s) h=c.charCodeAt(0)+((h<<5)-h); return COLORS[Math.abs(h)%COLORS.length]; }
+    function todayName() { return new Date().toLocaleDateString("en",{weekday:"long"}); }
+    function currentPeriod() { const t=new Date(), m=t.getHours()*60+t.getMinutes(); const r=[[540,600],[600,660],[675,735],[795,855],[855,915]]; for(let i=0;i<5;i++) if(m>=r[i][0]&&m<r[i][1]) return i; return -1; }
+
+    document.addEventListener("DOMContentLoaded",()=>{
+      AppData.departments.forEach(d=>document.getElementById("ttDept").innerHTML+=`<option value="${d.code}">${d.name}</option>`);
+      AppData.classes.forEach(c=>document.getElementById("ttClass").innerHTML+=`<option value="${c}">${c}</option>`);
+      AppData.teachers.forEach(t=>document.getElementById("ttTeacher").innerHTML+=`<option value="${t}">${t}</option>`);
+      render(); tick=setInterval(render,10000);
+    });
+
+    function getSlots() {
+      const df=document.getElementById("ttDept").value, cf=document.getElementById("ttClass").value, tf=document.getElementById("ttTeacher").value, out=[];
+      Store.getTimetable().forEach(d=>{if(d.isHoliday)return;d.slots.forEach(s=>{const c=s.class||"All";if((df==="All"||c.split("-")[0]===df)&&(cf==="All"||c===cf)&&(tf==="All"||s.teacher===tf)) out.push({...s,day:d.day});});});
+      return out;
+    }
+
+    function render() {
+      const all=getSlots(), today=todayName(), pi=currentPeriod();
+      // Day tabs â€” show Satâ€“Thu + Fri holiday
+      document.getElementById("dayTabs").innerHTML=DAYS.map((d,i)=>{
+        const isT=d===today, act=d===selDay||(d===today&&!selDay);
+        return `<div class="day-tab ${act?'active':''} ${isT?'today':''}" onclick="pickDay('${d}')">${LABELS[i]}${isT?' Â· Now':''}</div>`;
+      }).join("") + `<div class="day-tab holiday ${today==='Friday'?'today':''}" onclick="pickDay('Friday')">Fri ðŸŽ‰</div>`;
+
+      renderDay(all,today,pi);
+      if(curView==="week") renderWeek(all,today,pi);
+      renderLegend(all);
+      renderStats(all,today);
+    }
+
+    function pickDay(d) { selDay=d; render(); }
+
+    function renderDay(all,today,pi) {
+      const day=selDay||today, isH=day==="Friday", slots=all.filter(s=>s.day===day).sort((a,b)=>PERIODS.indexOf(a.time)-PERIODS.indexOf(b.time));
+      document.getElementById("dayTitle").textContent=isH?"Friday â€” Holiday":`${day}${day===today?" Â· Today":""}`;
+      const body=document.getElementById("dayBody");
+      if(isH){ body.innerHTML=`<div class="holiday-box"><div class="h-icon">ðŸŽ‰</div><div class="h-title">Weekend</div><div class="h-sub">No classes â€” have a great day off</div></div>`; return; }
+      if(!slots.length){ body.innerHTML=`<div class="empty-state" style="padding:32px"><i class="fas fa-calendar-day"></i><p>No classes</p></div>`; return; }
+      document.getElementById("dayStats").textContent=slots.length+" class"+(slots.length>1?"es":"");
+      body.innerHTML=slots.map(s=>{
+        const p=PERIODS.indexOf(s.time), n=p===pi, ps=p<pi&&day===today, c=subjColor(s.subject);
+        return `<div class="tt-card ${n?'now':''} ${ps?'past':''}">
+          <span class="subj-dot" style="background:${c}"></span>
+          <div class="subj-body">
+            <div class="subj-name">${s.subject} ${n?'<span class="now-badge">Now</span>':''}</div>
+            <div class="subj-meta">
+              <span><i class="fas fa-chalkboard-teacher"></i>${s.teacher}</span>
+              <span><i class="fas fa-door-open"></i>${s.room}</span>
+              <span><i class="fas fa-users"></i>${s.class}</span>
+            </div>
+          </div>
+          <span class="subj-time">${s.time.replace("-","â€“")}</span>
+        </div>`;
+      }).join("");
+    }
+
+    function renderWeek(all,today,pi) {
+      const body=document.getElementById("weekBody");
+      body.innerHTML=DAYS.map(d=>{
+        const slots=all.filter(s=>s.day===d).sort((a,b)=>PERIODS.indexOf(a.time)-PERIODS.indexOf(b.time));
+        if(!slots.length&&d!==today) return "";
+        return `<div style="margin-bottom:14px"><h5 style="font-size:12px;font-weight:600;margin:0 0 6px;color:${d===today?'var(--primary)':'var(--text-light)'}">${d}${d===today?' <span style="font-weight:400;font-size:10px">Â· Today</span>':''}${!slots.length?' <span style="font-weight:400;font-size:10px;color:var(--text-muted)">Â· No classes</span>':''}</h5>
+          ${slots.map(s=>{const n=PERIODS.indexOf(s.time)===pi&&d===today,c=subjColor(s.subject);
+            return `<div class="tt-card ${n?'now':''}" style="padding:8px 12px;margin-bottom:4px">
+              <span class="subj-dot" style="background:${c};width:8px;height:8px"></span>
+              <div class="subj-body"><div class="subj-name" style="font-size:12px">${s.subject}</div></div>
+              <span style="font-size:10px;color:var(--text-light)">${s.time}</span>
+            </div>`;
+          }).join("")}
+        </div>`;
+      }).join("");
+    }
+
+    function renderLegend(all) {
+      const subs=[...new Set(all.map(s=>s.subject))];
+      document.getElementById("legendArea").innerHTML=subs.map(s=>`<span><span class="ld" style="background:${subjColor(s)}"></span>${s}</span>`).join("");
+    }
+
+    function renderStats(all,today) {
+      const days=DAYS, cnts=days.map(d=>all.filter(s=>s.day===d).length);
+      document.getElementById("statRow").innerHTML=days.map((d,i)=>`<div class="stat-item ${d===today?'highlight':''}"><div class="num" style="color:${cnts[i]===0?'var(--text-muted)':d===today?'var(--primary)':'var(--text)'}">${cnts[i]}</div><div class="lbl">${LABELS[i]}</div></div>`).join("") +
+        `<div class="stat-item"><div class="num" style="color:var(--text-muted)">ðŸŽ‰</div><div class="lbl">Fri</div></div>`;
+    }
+
+    function switchView(v,el){
+      curView=v;
+      document.querySelectorAll(".view-pill").forEach(p=>p.classList.remove("active"));
+      el.classList.add("active");
+      ["dayView","weekView","listView"].forEach(id=>document.getElementById(id).style.display="none");
+      if(v==="day") document.getElementById("dayView").style.display="";
+      else if(v==="week"){ document.getElementById("weekView").style.display=""; render(); }
+      else { document.getElementById("listView").style.display=""; renderList(); }
+    }
+
+    function updateDept(){
+      const d=document.getElementById("ttDept").value, sel=document.getElementById("ttClass");
+      sel.innerHTML='<option value="All">All</option>';
+      (d==="All"?AppData.classes:AppData.classes.filter(c=>c.startsWith(d))).forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
+      render();
+    }
+
+    function renderList(){
+      const q=document.getElementById("listSearch").value.toLowerCase().trim(), all=getSlots(), uniq=[], seen=new Set();
+      all.forEach(s=>{const k=s.day+s.time+s.subject+s.class;if(!seen.has(k)){seen.add(k);uniq.push(s);}});
+      const f=q?uniq.filter(s=>[s.subject,s.teacher,s.class,s.room,s.day,s.time].some(x=>x.toLowerCase().includes(q))):uniq;
+      document.getElementById("ttBody").innerHTML=f.length?f.map(s=>`<tr>
+        <td>${s.day}</td><td>${s.time}</td>
+        <td><span class="ld" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${subjColor(s.subject)};margin-right:5px"></span>${s.subject}</td>
+        <td><span class="badge badge-info">${s.class}</span></td><td>${s.teacher}</td><td>${s.room}</td>
+      </tr>`).join(""):'<tr><td colspan="6"><div class="empty-state" style="padding:24px"><i class="fas fa-search"></i><p>No matches</p></div></td></tr>';
+    }
+  </script>
+</body>
+</html>

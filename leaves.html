@@ -1,0 +1,259 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Management - SmartAtten</title>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <script>!function(){var t=localStorage.getItem("institrack_theme")||(window.matchMedia("(prefers-color-scheme:light)").matches?"light":"dark");document.documentElement.setAttribute("data-theme",t)}();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .leave-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;text-transform:capitalize}
+    .leave-status.approved{background:rgba(0,230,118,0.12);color:var(--success)}
+    .leave-status.pending{background:rgba(255,171,0,0.12);color:var(--warning)}
+    .leave-status.rejected{background:rgba(255,64,96,0.12);color:var(--danger)}
+  </style>
+</head>
+<body>
+  <div class="toast-container"></div>
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-logo"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:52px;height:52px;display:block"></div>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    <div class="loading-text">Loading Leaves</div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><img src="assets/img/logo.svg" alt="SmartAtten" style="width:24px;height:24px;display:block"></div>
+      <div class="logo-text">SmartAtten</div>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Main</div>
+      <a href="dashboard.html" class="nav-link"><i class="fas fa-th-large"></i> <span>Dashboard</span></a>
+      <a href="attendance.html" class="nav-link"><i class="fas fa-clipboard-check"></i> <span>Attendance</span></a>
+      <a href="reports.html" class="nav-link"><i class="fas fa-chart-bar"></i> <span>Reports</span></a>
+      <a href="students.html" class="nav-link"><i class="fas fa-users"></i> <span>Students</span></a>
+    </div>
+    <div class="nav-section">
+      <div class="sidebar-heading">Management</div>
+      <a href="absenteeism.html" class="nav-link"><i class="fas fa-user-graduate"></i> <span>Absenteeism</span></a>
+      <a href="timetable.html" class="nav-link"><i class="fas fa-calendar-alt"></i> <span>Timetable</span></a>
+      <a href="leaves.html" class="nav-link active"><i class="fas fa-door-open"></i> <span>Leaves</span></a>
+      <a href="fees.html" class="nav-link"><i class="fas fa-wallet"></i> <span>Fees</span></a>
+    </div>
+    <div class="nav-section" style="margin-top:auto;border-top:1px solid var(--border);padding-top:16px">
+      <a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> <span>Settings</span></a>
+      <a href="#" onclick="App.logout()" class="nav-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+        <h3 style="font-size:16px;font-weight:700;letter-spacing:-0.3px">Leave Management</h3>
+        <span class="live-clock"></span>
+      </div>
+      <div class="topbar-right">
+        <span class="badge badge-info" id="roleBadge" style="font-size:9px">Teacher</span>
+
+        <button class="theme-toggle"><i class="fas fa-moon"></i></button>
+        <button class="notif-btn"><i class="fas fa-bell"></i><span class="notif-badge" id="notifCount">0</span></button>
+        <div class="user-avatar" id="avatarEl"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="stat-cards" id="leaveStats"></div>
+
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" onclick="showApplyModal()"><i class="fas fa-plus"></i> Apply for Leave</button>
+        <div style="flex:1"></div>
+        <div style="min-width:160px">
+          <select id="leaveFilter" onchange="renderLeaves()">
+            <option value="all">All Leaves</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h4>Leave Applications</h4>
+          <small style="color:var(--text-light)" id="leaveCount"></small>
+        </div>
+        <div class="card-body">
+          <div id="leaveList"></div>
+          <div class="empty-state" id="leaveEmpty" style="display:none">
+            <i class="fas fa-door-open"></i>
+            <p>No leave applications found</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="leaveModal">
+    <div class="modal" style="max-width:500px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0">Apply for Leave</h3>
+        <button onclick="closeLeaveModal()" style="background:none;border:none;color:var(--text-light);font-size:24px;cursor:pointer">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Leave Type</label>
+        <select id="leaveType">
+          <option value="Sick Leave">Sick Leave</option>
+          <option value="Casual Leave">Casual Leave</option>
+          <option value="Emergency Leave">Emergency Leave</option>
+          <option value="Personal Leave">Personal Leave</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">From Date</label>
+          <input type="date" id="leaveFrom">
+        </div>
+        <div class="form-group">
+          <label class="form-label">To Date</label>
+          <input type="date" id="leaveTo">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <textarea id="leaveReason" rows="3" placeholder="Describe your reason..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-outline" onclick="closeLeaveModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitLeave()"><i class="fas fa-paper-plane"></i> Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    function renderLeaves() {
+      const filter = document.getElementById("leaveFilter").value;
+      let leaves = Store.getLeaves();
+      if (filter !== "all") leaves = leaves.filter(l => l.status === filter);
+
+      const approved = leaves.filter(l => l.status === "approved").length;
+      const pending = leaves.filter(l => l.status === "pending").length;
+      const rejected = leaves.filter(l => l.status === "rejected").length;
+
+      document.getElementById("leaveStats").innerHTML = [
+        { icon: "fa-check-circle", value: approved, label: "Approved", color: "#00e676" },
+        { icon: "fa-clock", value: pending, label: "Pending", color: "#ffab00" },
+        { icon: "fa-times-circle", value: rejected, label: "Rejected", color: "#ff4060" }
+      ].map(s => `<div class="stat-card" style="border-left:3px solid ${s.color}">
+        <div class="stat-icon" style="background:${s.color}12;color:${s.color}"><i class="fas ${s.icon}"></i></div>
+        <div class="stat-info"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>
+      </div>`).join("");
+
+      const container = document.getElementById("leaveList");
+      const empty = document.getElementById("leaveEmpty");
+      document.getElementById("leaveCount").textContent = `${leaves.length} application(s)`;
+
+      if (!leaves.length) { container.innerHTML = ""; empty.style.display = "block"; return; }
+      empty.style.display = "none";
+
+      container.innerHTML = leaves.sort((a, b) => new Date(b.appliedOn) - new Date(a.appliedOn)).map(l => `
+        <div class="card" style="margin-bottom:10px;border-radius:var(--radius-md)">
+          <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;padding:16px">
+            <div>
+              <div style="font-weight:600;font-size:14px">${l.type}</div>
+              <div style="font-size:12px;color:var(--text-light);margin-top:4px">
+                <i class="fas fa-user"></i> ${l.name} (${l.roll})
+              </div>
+              <div style="font-size:12px;color:var(--text-light);margin-top:2px">
+                <i class="fas fa-calendar"></i> ${l.from} â†’ ${l.to}
+              </div>
+              ${l.reason ? `<div style="font-size:12px;color:var(--text);margin-top:8px;padding:10px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border)">${l.reason}</div>` : ""}
+              <div style="font-size:10px;color:var(--text-muted);margin-top:6px">Applied: ${l.appliedOn}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:end;gap:6px">
+              <span class="leave-status ${l.status}">
+                <i class="fas ${l.status === 'approved' ? 'fa-check-circle' : l.status === 'rejected' ? 'fa-times-circle' : 'fa-clock'}"></i>
+                ${l.status.charAt(0).toUpperCase() + l.status.slice(1)}
+              </span>
+              ${l.status === "pending" && App.currentUser?.role !== "student" ? `
+                <div style="display:flex;gap:4px">
+                  <button class="btn btn-sm btn-success" onclick="updateLeave('${l.id}','approved')"><i class="fas fa-check"></i></button>
+                  <button class="btn btn-sm btn-danger" onclick="updateLeave('${l.id}','rejected')"><i class="fas fa-times"></i></button>
+                </div>
+              ` : ""}
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function showApplyModal() {
+      document.getElementById("leaveFrom").value = new Date().toISOString().split("T")[0];
+      document.getElementById("leaveTo").value = new Date().toISOString().split("T")[0];
+      document.getElementById("leaveModal").classList.add("active");
+    }
+
+    function closeLeaveModal() {
+      document.getElementById("leaveModal").classList.remove("active");
+    }
+
+    function submitLeave() {
+      const type = document.getElementById("leaveType").value;
+      const from = document.getElementById("leaveFrom").value;
+      const to = document.getElementById("leaveTo").value;
+      const reason = document.getElementById("leaveReason").value;
+      if (!from || !to) { App.showToast("Please select dates", "warning"); return; }
+      const student = AppData.students[0];
+      Store.addLeave({
+        id: "LVE-" + Date.now(), type, from, to, reason,
+        studentId: student.id, name: App.currentUser?.name || student.name,
+        roll: student.roll, status: "pending",
+        appliedOn: new Date().toISOString().split("T")[0]
+      });
+      closeLeaveModal();
+      renderLeaves();
+      App.showToast("Leave application submitted", "success");
+    }
+
+    function updateLeave(id, status) {
+      Store.updateLeaveStatus(id, status);
+      const leaves = Store.getLeaves();
+      const leave = leaves.find(l => l.id === id);
+      renderLeaves();
+      Store.logActivity("leave_" + status, `${leave?.name || "Unknown"} (${leave?.roll || ""}) ${status} — ${leave?.type || ""}`);
+      App.showToast(`Leave ${status}`, status === "approved" ? "success" : "info");
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      if (!Store.getLeaves().length) {
+        const students = Store.getStudents();
+        const types = ["Sick Leave","Casual Leave","Emergency Leave","Personal Leave"];
+        const reasons = ["Not feeling well","Family function","Medical appointment","Personal work","Emergency at home"];
+        const statuses = ["approved","pending","rejected"];
+        for (let i = 0; i < 6; i++) {
+          const d = new Date(); d.setDate(d.getDate() + i * 3);
+          const d2 = new Date(d); d2.setDate(d2.getDate() + 1);
+          Store.addLeave({
+            id: "LVE-" + i, type: types[i % types.length],
+            from: d.toISOString().split("T")[0], to: d2.toISOString().split("T")[0],
+            reason: reasons[i % reasons.length],
+            studentId: students[i % students.length].id,
+            name: students[i % students.length].name,
+            roll: students[i % students.length].roll,
+            status: statuses[i % statuses.length],
+            appliedOn: new Date(Date.now() - i * 86400000).toISOString().split("T")[0]
+          });
+        }
+      }
+      setTimeout(renderLeaves, 200);
+    });
+  </script>
+</body>
+</html>
